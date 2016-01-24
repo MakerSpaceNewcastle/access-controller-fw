@@ -835,8 +835,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <element name="R1" library="SparkFun-Resistors" package="0603-RES" value="4.7K" x="41.148" y="17.526" rot="R270">
 <attribute name="PROD_ID" value="RES-00824" x="41.148" y="17.526" size="1.778" layer="27" rot="R270" display="off"/>
 </element>
-<element name="R2" library="SparkFun-Resistors" package="0603-RES" value="4.7K" x="43.18" y="20.32">
-<attribute name="PROD_ID" value="RES-00824" x="43.18" y="20.32" size="1.778" layer="27" display="off"/>
+<element name="R2" library="SparkFun-Resistors" package="0603-RES" value="4.7K" x="44.45" y="22.86">
+<attribute name="PROD_ID" value="RES-00824" x="44.45" y="22.86" size="1.778" layer="27" display="off"/>
 </element>
 <element name="R3" library="SparkFun-Resistors" package="0603-RES" value="10K" x="20.32" y="30.48">
 <attribute name="PROD_ID" value="RES-00824" x="20.32" y="30.48" size="1.778" layer="27" display="off"/>
@@ -970,8 +970,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <signal name="PGM_CTL">
 <contactref element="PGM_HEADER" pad="2"/>
 <contactref element="R2" pad="2"/>
-<wire x1="48.26" y1="19.05" x2="45.3" y2="19.05" width="0.4064" layer="1"/>
-<wire x1="45.3" y1="19.05" x2="44.03" y2="20.32" width="0.4064" layer="1"/>
+<wire x1="45.3" y1="22.86" x2="45.3" y2="22.01" width="0.4064" layer="1"/>
+<wire x1="45.3" y1="22.01" x2="48.26" y2="19.05" width="0.4064" layer="1"/>
 </signal>
 <signal name="LED_DATA_IN">
 <contactref element="LED_HEADER" pad="1"/>
@@ -1066,12 +1066,12 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <signal name="SDA">
 <contactref element="I2C_CONN" pad="2"/>
 <wire x1="12.7" y1="33.02" x2="22.86" y2="33.02" width="0.4064" layer="16"/>
-<wire x1="22.86" y1="33.02" x2="35.433" y2="24.638" width="0.4064" layer="16"/>
-<via x="35.433" y="24.638" extent="1-16" drill="0.508"/>
+<wire x1="22.86" y1="33.02" x2="35.56" y2="24.13" width="0.4064" layer="16"/>
+<via x="35.56" y="24.13" extent="1-16" drill="0.508"/>
 <contactref element="X1" pad="13"/>
 <contactref element="R5" pad="1"/>
 <wire x1="38.615" y1="24.535" x2="35.56" y2="24.535" width="0.4064" layer="1"/>
-<wire x1="35.56" y1="24.535" x2="35.433" y2="24.638" width="0.4064" layer="1"/>
+<wire x1="35.56" y1="24.535" x2="35.56" y2="24.13" width="0.4064" layer="1"/>
 <wire x1="41.187" y1="24.638" x2="38.925" y2="24.535" width="0.4064" layer="1"/>
 <wire x1="38.925" y1="24.535" x2="38.615" y2="24.535" width="0.4064" layer="1"/>
 </signal>
@@ -1084,7 +1084,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="18.669" y1="32.131" x2="24.511" y2="32.131" width="0.4064" layer="1"/>
 <wire x1="24.511" y1="32.131" x2="33.147" y2="25.146" width="0.4064" layer="1"/>
 <wire x1="33.147" y1="25.146" x2="35.56" y2="22.86" width="0.4064" layer="1"/>
-<wire x1="42.33" y1="20.32" x2="38.94" y2="22.86" width="0.4064" layer="1"/>
+<wire x1="43.6" y1="22.86" x2="38.94" y2="22.86" width="0.4064" layer="1"/>
 <wire x1="38.94" y1="22.86" x2="38.615" y2="22.535" width="0.4064" layer="1"/>
 <wire x1="35.56" y1="22.86" x2="38.29" y2="22.86" width="0.4064" layer="1"/>
 <wire x1="38.29" y1="22.86" x2="38.615" y2="22.535" width="0.4064" layer="1"/>

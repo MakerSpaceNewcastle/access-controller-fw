@@ -3498,7 +3498,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="RFID_CONN" gate="G$1" x="10.16" y="5.08"/>
 <instance part="PWR" gate="G$1" x="7.62" y="40.64"/>
 <instance part="I2C_CONN" gate="G$1" x="38.1" y="91.44"/>
-<instance part="R5" gate="G$1" x="109.22" y="43.18"/>
+<instance part="R5" gate="G$1" x="101.6" y="43.18"/>
 <instance part="SUPPLY2" gate="G$1" x="48.26" y="50.8"/>
 </instances>
 <busses>
@@ -3554,11 +3554,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="I2C_CONN" gate="G$1" pin="4"/>
 <wire x1="43.18" y1="96.52" x2="50.8" y2="96.52" width="0.1524" layer="91"/>
 <label x="45.72" y="96.52" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="R1" gate="G$1" pin="2"/>
-<wire x1="119.38" y1="35.56" x2="127" y2="35.56" width="0.1524" layer="91"/>
-<label x="121.92" y="35.56" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PWR_IN" class="0">
@@ -3619,6 +3614,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="48.26" y1="33.02" x2="60.96" y2="33.02" width="0.1524" layer="91"/>
 </segment>
 <segment>
+<pinref part="R1" gate="G$1" pin="2"/>
+<wire x1="119.38" y1="35.56" x2="127" y2="35.56" width="0.1524" layer="91"/>
+<label x="121.92" y="35.56" size="1.778" layer="95"/>
+</segment>
+<segment>
 <pinref part="RFID_CONN" gate="G$1" pin="8"/>
 <wire x1="15.24" y1="15.24" x2="22.86" y2="15.24" width="0.1524" layer="91"/>
 <label x="17.78" y="15.24" size="1.778" layer="95"/>
@@ -3627,11 +3627,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="I2C_CONN" gate="G$1" pin="3"/>
 <wire x1="43.18" y1="93.98" x2="50.8" y2="93.98" width="0.1524" layer="91"/>
 <label x="45.72" y="93.98" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="R5" gate="G$1" pin="2"/>
-<wire x1="114.3" y1="43.18" x2="121.92" y2="43.18" width="0.1524" layer="91"/>
-<label x="119.38" y="43.18" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="DTR" class="0">
@@ -3703,10 +3698,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <label x="17.78" y="68.58" size="1.778" layer="95"/>
 </segment>
 <segment>
-<pinref part="X1" gate="G$1" pin="GPIO15"/>
-<wire x1="96.52" y1="35.56" x2="109.22" y2="35.56" width="0.1524" layer="91"/>
-<pinref part="R1" gate="G$1" pin="1"/>
-<label x="99.06" y="35.56" size="1.778" layer="95"/>
+<pinref part="R5" gate="G$1" pin="2"/>
+<wire x1="106.68" y1="43.18" x2="121.92" y2="43.18" width="0.1524" layer="91"/>
+<label x="109.22" y="43.18" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="N$1" class="0">
@@ -3800,6 +3794,12 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <label x="50.8" y="40.64" size="1.778" layer="95"/>
 </segment>
 </net>
+<net name="N$3" class="0">
+<segment>
+<pinref part="X1" gate="G$1" pin="GPIO5"/>
+<pinref part="R5" gate="G$1" pin="1"/>
+</segment>
+</net>
 <net name="SDA" class="0">
 <segment>
 <pinref part="I2C_CONN" gate="G$1" pin="2"/>
@@ -3807,10 +3807,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <label x="45.72" y="91.44" size="1.778" layer="95"/>
 </segment>
 <segment>
-<pinref part="X1" gate="G$1" pin="GPIO5"/>
-<pinref part="R5" gate="G$1" pin="1"/>
-<wire x1="104.14" y1="43.18" x2="96.52" y2="43.18" width="0.1524" layer="91"/>
-<label x="99.06" y="43.18" size="1.778" layer="95"/>
+<pinref part="X1" gate="G$1" pin="GPIO15"/>
+<wire x1="96.52" y1="35.56" x2="109.22" y2="35.56" width="0.1524" layer="91"/>
+<pinref part="R1" gate="G$1" pin="1"/>
+<label x="99.06" y="35.56" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="SCL" class="0">
