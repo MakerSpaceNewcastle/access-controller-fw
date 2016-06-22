@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.6.0">
+<eagle version="7.5.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -4926,7 +4926,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="D2" gate="G$1" x="106.68" y="96.52" rot="R90"/>
 <instance part="R7" gate="G$1" x="83.82" y="73.66" rot="R90"/>
 <instance part="SW1" gate="G$1" x="111.76" y="60.96" rot="R270"/>
-<instance part="GND3" gate="1" x="121.92" y="63.5"/>
+<instance part="GND3" gate="1" x="121.92" y="66.04"/>
 </instances>
 <busses>
 </busses>
@@ -5008,7 +5008,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="SW1" gate="G$1" pin="4"/>
 <pinref part="SW1" gate="G$1" pin="3"/>
 <wire x1="109.22" y1="68.58" x2="111.76" y2="68.58" width="0.1524" layer="91"/>
-<wire x1="111.76" y1="68.58" x2="121.92" y2="66.04" width="0.1524" layer="91"/>
+<wire x1="111.76" y1="68.58" x2="121.92" y2="68.58" width="0.1524" layer="91"/>
 <junction x="111.76" y="68.58"/>
 <pinref part="GND3" gate="1" pin="GND"/>
 </segment>
