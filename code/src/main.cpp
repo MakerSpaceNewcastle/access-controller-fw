@@ -10,7 +10,7 @@
 #include <ESP8266WiFi.h>
 #include <SPI.h>
 #include <MFRC522.h>
- //Uses Alistair MacDonald's MD5 library, available here: https://github.com/alistairuk/MD5_String
+//Uses Alistair MacDonald's MD5 library, available here: https://github.com/alistairuk/MD5_String
 #include <MD5_String.h>
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
@@ -20,9 +20,11 @@
 #define RST_PIN	16
 #define SS_PIN	2
 
-//Peripherals
+//Pin definition for other peripherals
 #define RELAY_PIN 5
 #define LED_PIN 15
+#define I2C_SDA_PIN 4
+#define I2C_SCL_PIN 0
 
 //Config
 #define DOOR_UNLOCK_TIME 3000 //How long the door lock is left open (in milliseconds)
