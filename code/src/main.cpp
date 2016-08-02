@@ -27,8 +27,8 @@
 #define I2C_SCL_PIN 0
 
 //Config
-#define LATCH_MODE 0    //The relay will be triggered for ACTIVATE_TIME ms, then automatically reset.
-//#define LATCH_MODE 1    //The relay will be triggered and remain 'on' until another RFID is presented to end session
+//#define LATCH_MODE 0    //The relay will be triggered for ACTIVATE_TIME ms, then automatically reset.
+#define LATCH_MODE 1    //The relay will be triggered and remain 'on' until another RFID is presented to end session
 
 #define ACTIVATE_TIME 3000 //How long the device remains activated (in milliseconds). No effect if LATCH_MODE is 1...
 
@@ -54,27 +54,39 @@ String hashID() {
 //Activate relay
 void activateDevice() {
   Serial.println("Activating device");
+  //LED to green
+  led.setPixelColor(0,0,255,0);
+  led.show();
+  //Trigger the relay via FET
   digitalWrite(RELAY_PIN, HIGH);
 
-#if LATCH_MODE == 0
+#if LATCH_MODE == 0  //Non-latching, ie for door controller
+
   Serial.print("Waiting for ");
   Serial.print(ACTIVATE_TIME/1000);
   Serial.println(" seconds");
   delay(ACTIVATE_TIME);
-#elif LATCH_MODE == 2
-  Serial.print("Device activated.  Will remain active until card presented");
+
+#elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
+
+  Serial.println("Device activated.  Will remain active until card presented");
+  //Wait at 2 seconds to see if a card is present, otherwise we just keep activating/deactivating
+  delay(2000);
   //Wait for a card to be presented to end session
   while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
     delay(50);
   }
-  Serial.print("Card presented, ending session");
 #endif
-
-
   Serial.println("Deactivating device");
   digitalWrite(RELAY_PIN, LOW);
-}
 
+ //LED back to blue
+ led.setPixelColor(0,0,0,250);
+ led.show();
+
+  //Wait for 1 second otherwise we can end up reactivating immediately if card still present....
+  delay(2000);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -98,24 +110,20 @@ void setup() {
   //LED to blue.
   led.setPixelColor(0,0,0,250);
   led.show();
-  //Now ready to accept cards.
-  Serial.println("Ready, listening for card");
-
 }
 
 void loop() {
 
+  Serial.println("Ready, listening for card");
   //Keep trying to sense if a card is present.
   while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
     delay(50);
   }
-
   //Found a card.
-
   //Calculate the MD5 hash of the Card UID field.
   String cardHash = hashID();
 
-  Serial.println("Read valid card.  Card UID Hash (MD5): ");
+  Serial.println("Read card.  Card UID Hash (MD5): ");
   Serial.println(cardHash);
 
   //LED to yellow while we check local database
@@ -124,24 +132,15 @@ void loop() {
 
   // Is the card in the cache database
   if (allowedCards.indexOf(cardHash)>=0) {
-    Serial.println("Card OK - opening door");
-    //Green LED
-    led.setPixelColor(0,0,255,0);
-    led.show();
+    Serial.println("Card allowed - activating device");
     activateDevice();
   }
   else {
     //Access DENIED....
-    Serial.println("Card not allowed - NOT opening door");
+    Serial.println("Card not allowed - NOT activating device");
     //Go red for 1 second
     led.setPixelColor(0,255,0,0);
     led.show();
     delay(1000);
   }
-
-  //Back to blue
-  led.setPixelColor(0,0,0,250);
-  led.show();
-
-  Serial.println("Ready, listening for card");
 }
