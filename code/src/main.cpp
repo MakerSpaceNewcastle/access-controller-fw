@@ -27,7 +27,11 @@
 #define I2C_SCL_PIN 0
 
 //Config
-#define DOOR_UNLOCK_TIME 3000 //How long the door lock is left open (in milliseconds)
+#define LATCH_MODE 0    //The relay will be triggered for ACTIVATE_TIME ms, then automatically reset.
+//#define LATCH_MODE 1    //The relay will be triggered and remain 'on' until another RFID is presented to end session
+
+#define ACTIVATE_TIME 3000 //How long the device remains activated (in milliseconds). No effect if LATCH_MODE is 1...
+
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);	// Create the MFRC522 instance
 Adafruit_NeoPixel led = Adafruit_NeoPixel(1, LED_PIN, NEO_GRB + NEO_KHZ800); //status LED
@@ -37,20 +41,37 @@ Adafruit_NeoPixel led = Adafruit_NeoPixel(1, LED_PIN, NEO_GRB + NEO_KHZ800); //s
 
 String allowedCards="e4c4e25f7c68060b6684e4fbf0ed0487\ndfbbcfe0920817d6d463110ab0d5fd7c\n";
 
+
+#if !(LATCH_MODE == 0 || LATCH_MODE == 1)
+#error "LATCH_MODE must be 0 or 1"
+#endif
+
 //Helper function to hash the card ID
 String hashID() {
   return md5_string((char*)mfrc522.uid.uidByte, mfrc522.uid.size);
 }
 
 //Activate relay
-void openLatch() {
-  Serial.println("Unlocking Door");
+void activateDevice() {
+  Serial.println("Activating device");
   digitalWrite(RELAY_PIN, HIGH);
+
+#if LATCH_MODE == 0
   Serial.print("Waiting for ");
-  Serial.print(DOOR_UNLOCK_TIME/1000);
+  Serial.print(ACTIVATE_TIME/1000);
   Serial.println(" seconds");
-  delay(DOOR_UNLOCK_TIME);
-  Serial.println("Securing door...");
+  delay(ACTIVATE_TIME);
+#elif LATCH_MODE == 2
+  Serial.print("Device activated.  Will remain active until card presented");
+  //Wait for a card to be presented to end session
+  while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
+    delay(50);
+  }
+  Serial.print("Card presented, ending session");
+#endif
+
+
+  Serial.println("Deactivating device");
   digitalWrite(RELAY_PIN, LOW);
 }
 
@@ -60,7 +81,7 @@ void setup() {
   delay(250);
   Serial.println("Init....");
 
-  //Relay control pin for the FET 
+  //Relay control pin for the FET
   pinMode(RELAY_PIN, OUTPUT);
 
   // Init the SPI bus + RFID reader
@@ -107,7 +128,7 @@ void loop() {
     //Green LED
     led.setPixelColor(0,0,255,0);
     led.show();
-    openLatch();
+    activateDevice();
   }
   else {
     //Access DENIED....
