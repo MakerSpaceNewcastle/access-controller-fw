@@ -82,7 +82,7 @@ bool DBHandler::sync() {
   String buf;
 
   while (ptr->available()) {
-    buf = ptr->readStringUntil('\r');
+    buf = ptr->readStringUntil(REMOTE_DELIM_CHAR);
     const char *p = buf.c_str();
     ptr->read();  //eat the \n (server records are \r\n terminated.)
     if (strlen(p) == sizeof(DBRecord)-1) {
@@ -107,6 +107,7 @@ bool DBHandler::sync() {
   Serial.print(database.count());
   Serial.print(" records - version ");
   Serial.println(database.DBVersion());
+  return true;
 }
 
 bool DBHandler::inSync() {
