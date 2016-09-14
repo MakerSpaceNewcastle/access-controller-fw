@@ -10,7 +10,7 @@ typedef struct DBRecord {
   char hash[33];  //hash is 32 chars + terminating \0
 };
 
-#define REMOTE_DELIM_CHAR '\r' //Currently actually \r\n terminated lines....
+#define REMOTE_DELIM_CHAR '\n' //Currently actually \n terminated lines....
 
 #define MAX_RECORDS 500
 #define TABLE_SIZE ( sizeof(DBRecord) * MAX_RECORDS )

@@ -52,18 +52,20 @@ bool DBHandler::sync() {
 
   int result = client.GET();
 
+  String id = client.header("ETag");
+  if (id.length() == 34) id = id.substring(1,33);
+  const char *newDBID = id.c_str();
+
+
   if (result != 304 && result != 200) {
     Serial.println("Bogus server response (not 200/304)");
     return false;
   }
 
-  if (result == 304) {
+  if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
     Serial.println("DB is in sync");
     return true;
   }
-
-  String id = client.header("ETag");
-  const char *newDBID = id.c_str();
 
   if (strlen(newDBID) != 32) {
     Serial.print("Invalid DB ETag received from remote server - ");
@@ -84,7 +86,7 @@ bool DBHandler::sync() {
   while (ptr->available()) {
     buf = ptr->readStringUntil(REMOTE_DELIM_CHAR);
     const char *p = buf.c_str();
-    ptr->read();  //eat the \n (server records are \r\n terminated.)
+
     if (strlen(p) == sizeof(DBRecord)-1) {
       tempDB.appendRec((unsigned char*)p);
     }
@@ -122,7 +124,11 @@ bool DBHandler::inSync() {
 
     int result = client.GET();
 
-    if (result == 304) {
+    String id = client.header("ETag");
+    if (id.length() == 34 ) id = id.substring(1,32); //the etag might be quoted..
+    const char *newDBID = id.c_str();
+
+    if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
       Serial.print("Database is up to date - version ");
       Serial.println(database.DBVersion());
       return true;
