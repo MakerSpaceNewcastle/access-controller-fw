@@ -175,8 +175,10 @@ void setup() {
     Serial.println("Running in offline mode, using local database");
   }
   ledToRestingColor();
+#ifdef MQTT_SUPPORT
   //Initialise MQTT server
   client.setServer(MQTT_Server,1883);
+#endif
 }
 
 bool checkCard(String hash) {
