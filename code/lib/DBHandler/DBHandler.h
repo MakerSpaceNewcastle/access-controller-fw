@@ -20,7 +20,6 @@ class DBHandler {
 public:
   DBHandler(const char *, const char *);
   ~DBHandler();
-  bool inSync();
   bool sync();
   bool contains(const char*);
 

@@ -45,25 +45,27 @@ bool DBHandler::sync() {
   Serial.println("Checking server database version");
   HTTPClient client;
   client.begin(syncURL);
-  client.addHeader("If-None-Match", database.DBVersion());
-
+  //The Etag needs to be placed in quotes.
+  client.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));
   const char *headerKeys[] = {"ETag",};
   client.collectHeaders(headerKeys, 1);
 
   int result = client.GET();
 
   String id = client.header("ETag");
-  if (id.length() == 34) id = id.substring(1,33);
+
+  if (id.length() == 34) id = id.substring(1,33); //If it's quoted, strip the quotes...
   const char *newDBID = id.c_str();
-
-
+  
   if (result != 304 && result != 200) {
     Serial.println("Bogus server response (not 200/304)");
     return false;
   }
 
   if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
-    Serial.println("DB is in sync");
+    Serial.print("Server result - ");
+    Serial.print(result);
+    Serial.println(" - DB is in sync");
     return true;
   }
 
@@ -110,31 +112,6 @@ bool DBHandler::sync() {
   Serial.print(" records - version ");
   Serial.println(database.DBVersion());
   return true;
-}
-
-bool DBHandler::inSync() {
-    Serial.print("Local DB Version - ");
-    Serial.println(database.DBVersion());
-    HTTPClient client;
-    client.begin(syncURL);
-    client.addHeader("If-None-Match", database.DBVersion());
-
-    const char *headerKeys[] = {"Etag",};
-    client.collectHeaders(headerKeys, 1);
-
-    int result = client.GET();
-
-    String id = client.header("ETag");
-    if (id.length() == 34 ) id = id.substring(1,32); //the etag might be quoted..
-    const char *newDBID = id.c_str();
-
-    if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
-      Serial.print("Database is up to date - version ");
-      Serial.println(database.DBVersion());
-      return true;
-    }
-    Serial.println("Not up to date (or failed...!");
-    return false;
 }
 
 bool DBHandler::contains(const char *hash) {
