@@ -18,10 +18,19 @@
 
 #include <MD5_String.h>  //  https://github.com/alistairuk/MD5_String
 #include <../lib/DBHandler/DBHandler.h> //Included as part of project tree.
+
+#include "user_config.h"
+
+#ifdef MQTT_SUPPORT
 #include <PubSubClient.h> //for MQTT announcements...
+#endif
+
+#ifdef OTA_UPDATE_SUPPORT
+#include <ESP8266httpUpdate.h>
+#endif
 
 //Pin defintions for MFRC522/SPI wiring
-#define RST_PIN	16
+#define RST_PIN	15
 #define SS_PIN	2
 
 //Pin definition for other peripherals
@@ -30,23 +39,9 @@
 #define I2C_SDA_PIN 4
 #define I2C_SCL_PIN 0
 
-#define MQTT_SUPPORT //Uncomment to enable MQTT publishing for access.
-
-#define LATCH_MODE 0    //The relay will be triggered for ACTIVATE_TIME ms, then automatically reset.
-//#define LATCH_MODE 1    //The relay will be triggered and remain 'on' until another RFID is presented to end session
-#define ACTIVATE_TIME 3000 //LATCH_MODE 0 only - How long the device remains activated (in milliseconds).
-
 #if !(LATCH_MODE == 0 || LATCH_MODE == 1)
-#error "LATCH_MODE must be 0 or 1"
+#error "LATCH_MODE must be defined as 0 or 1"
 #endif
-
-//Config
-const char *ssid = "";
-const char *pw = "";
-const char *syncURL = ""; //URL for synchronising database
-const char *logURL = ""; //The log API needs to be improved for multidevices FIXME
-const char *MQTT_Server="172.18.16.25";
-const char *opendoorMQTTTopic = "/status/backdoor/opened";
 
 #ifdef MQTT_SUPPORT
 WiFiClient espClient;
@@ -60,26 +55,27 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);	// Create the MFRC522 instance
 Adafruit_NeoPixel led = Adafruit_NeoPixel(1, LED_PIN, NEO_GRB + NEO_KHZ800); //status LED
 DBHandler database(filePath, syncURL);
 
-
 // ****************** FUNCTIONS ******************
 
+void sendMQTT(const char *topic, const char *message) {
+
 #ifdef MQTT_SUPPORT
-//Send MQTT broadcast to space's server.
-void sendMQTT(String hash) {
+  //Send MQTT broadcast to space's server.
   //Connect as backdoor to the server.
-  if (!client.connected() ) client.connect("backdoor");
+  if (!client.connected() ) client.connect(deviceName);
   if (client.connected()) {
-        // Once connected, publish an announcement...
-        client.publish(opendoorMQTTTopic, hash.c_str());
+      // Once connected, publish an announcement...
+      client.publish(topic, message);
     }
-}
 #endif
 
+}
+
 //Hit the log URL.
-bool logAccess(String hash, bool granted) {
+bool logAccess(String hash, const char *event) {
   HTTPClient client;
   String fullURL(logURL);
-  client.begin(fullURL + "?card=" + hash);
+  client.begin(fullURL + "?card=" + hash + "&event=" + event);
   int result = client.GET();
   client.end();
   if (result == 200) return true;
@@ -101,34 +97,18 @@ void activateDevice() {
   led.show();
   //Trigger the relay via FET
   digitalWrite(RELAY_PIN, HIGH);
-
-#if LATCH_MODE == 0  //Non-latching, ie for door controller
-
-  Serial.print(" - Waiting for ");
-  Serial.print(ACTIVATE_TIME/1000);
-  Serial.println(" seconds");
-  delay(ACTIVATE_TIME);
-
-#elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
-
-  Serial.print(" - Will remain active until card presented");
-  //Wait for 2 seconds for the user to remove their card, otherwise we just keep activating/deactivating
-  delay(2000);
-  //Wait for a card to be presented to end session
-  while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
-    delay(50);
-  }
-
-#endif
-
-  Serial.println("Deactivating device");
-  digitalWrite(RELAY_PIN, LOW);
-
-  //LED back to resting colour
-  ledToRestingColor();
-  //Wait for 2 seconds otherwise we can end up reactivating immediately if card still present....
-  delay(2000);
 }
+
+void deactivateDevice() {
+    Serial.println("Deactivating device");
+    digitalWrite(RELAY_PIN, LOW);
+
+    //LED back to resting colour
+    ledToRestingColor();
+    //Wait for 2 seconds otherwise we can end up reactivating immediately if card still present....
+    delay(2000);
+}
+
 
 bool connectToWifi(const char *SSID, const char *pw) {
     if (WiFi.status() == WL_CONNECTED) return true;
@@ -142,6 +122,33 @@ bool connectToWifi(const char *SSID, const char *pw) {
       if (WiFi.status() == WL_CONNECTED) return true;
     }
     return false;
+}
+
+void OTAUpdate() {
+  //Four yellow flashes to indicate start of update.
+  for (int i=0; i<4; ++i) {
+    led.setPixelColor(0,255,255,0);
+    led.show();
+    delay(100);
+    led.clear();
+    led.show();
+    delay(100);
+  }
+  ESPhttpUpdate.rebootOnUpdate(false);
+  int result = ESPhttpUpdate.update(OTAServer, OTAPort, OTAURL);
+
+  for (int i=0; i<4; ++i) {
+    //Four green flashes if success, four red flashes if failed.
+    if (result == HTTP_UPDATE_OK) led.setPixelColor(0, 0,255,0);
+    else led.setPixelColor(0,255,0,0);
+    led.show();
+    delay(100);
+    led.clear();
+    led.show();
+    delay(100);
+  }
+  //Restart.
+  ESP.restart();
 }
 
 void setup() {
@@ -163,7 +170,6 @@ void setup() {
   // Init the SPI bus + RFID reader
   SPI.begin();
   mfrc522.PCD_Init();
-  mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max); //Gain to maximum
 
   //Initialise and if necessary sync the user database.
   if (WiFi.status() == WL_CONNECTED) {
@@ -212,16 +218,39 @@ void loop() {
   String cardHash = md5_string((char*)mfrc522.uid.uidByte, mfrc522.uid.size);
   Serial.println("Read card.  Card UID Hash (MD5): ");
   Serial.println(cardHash);
+#ifdef OTA_UPDATE_SUPPORT
+  //See if this card is the OTA update trigger card, and if so, do the update.
+  if (!strcmp(cardHash.c_str(), OTATriggerCardHash)) OTAUpdate();
+#endif
 
   bool validUser = checkCard(cardHash);
   if (validUser) {
     Serial.println("Card allowed - activating device");
     activateDevice();
+    logAccess(cardHash, "Activated");
+    sendMQTT(activateMQTTTopic, cardHash.c_str());
 
-#ifdef MQTT_SUPPORT
-    sendMQTT(cardHash); //This isnt ideal for devices that stay active, as it wont send the MQTT until logout...
-#endif
-    logAccess(cardHash, true);
+    #if LATCH_MODE == 0  //Non-latching, ie for door controller
+
+      Serial.print(" - Waiting for ");
+      Serial.print(ACTIVATE_TIME/1000);
+      Serial.println(" seconds");
+      delay(ACTIVATE_TIME);
+      deactivateDevice();
+
+    #elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
+
+      Serial.print(" - Will remain active until card presented");
+      //Wait for 2 seconds for the user to remove their card, otherwise we just keep activating/deactivating
+      delay(2000);
+      //Wait for a card to be presented to end session
+      while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
+        delay(50);
+      }
+      deactivateDevice();
+      logAccess(cardHash, "Deactivated");
+      sendMQTT(deactivateMQTTTopic, cardHash.c_str());
+    #endif
   }
   else {
     //This card is NOT allowed access.
@@ -231,7 +260,7 @@ void loop() {
     led.show();
     delay(1000);
     //Log the denied access.
-    logAccess(cardHash, false);
+    logAccess(cardHash, "Denied");
     //Back to normal colour.
     ledToRestingColor();
   }
