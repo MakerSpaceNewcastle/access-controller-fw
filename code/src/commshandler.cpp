@@ -15,8 +15,10 @@ CommsHandler::CommsHandler() {
 
 CommsHandler::~CommsHandler() {
   delete led;
+#ifdef MQTT_SUPPORT
   delete client;
   delete espClient;
+#endif
 }
 
 void CommsHandler::ledReadyState() {
@@ -56,7 +58,10 @@ bool CommsHandler::logAccess(const char *hash, const char *event) {
 bool CommsHandler::sendMQTT(const char *topic, const char *message) {
 #ifdef MQTT_SUPPORT
   //Send MQTT status update.
-  if (!client->connected() ) client->connect(DEVICENAME);
+  if (!client->connected()) {
+	client->connect(DEVICENAME);
+	delay(50);
+  }
   if (client->connected()) {
       // Once connected, publish an announcement...
       client->publish(topic, message);
