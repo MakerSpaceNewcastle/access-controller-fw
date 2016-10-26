@@ -105,16 +105,16 @@ void loop() {
     Serial.println("Card allowed - activating device");
     activateDevice();
     comms.deviceActivated(cardHash.c_str());
-
-    #if LATCH_MODE == 0  //Non-latching, ie for door controller
+#if LATCH_MODE == 0  //Non-latching, ie for door controller
 
       Serial.print(" - Waiting for ");
       Serial.print(ACTIVATE_TIME/1000);
       Serial.println(" seconds");
       delay(ACTIVATE_TIME);
       deactivateDevice();
+      comms.deviceDeactivated(cardHash.c_str());
 
-    #elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
+#elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
 
       Serial.print(" - Will remain active until card presented");
       //Wait for 2 seconds for the user to remove their card, otherwise we just keep activating/deactivating
@@ -127,7 +127,7 @@ void loop() {
       comms.deviceDeactivated(cardHash.c_str());
 
       delay(2000); //otherwise we will reactivate again as the card is still readable!
-      #endif
+  #endif
   }
   else {
     //This card is NOT allowed access.
