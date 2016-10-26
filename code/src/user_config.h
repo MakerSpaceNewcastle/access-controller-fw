@@ -19,7 +19,7 @@
 #define SYNCURL "http://www.blah.com?dev=" DEVICENAME //URL for synchronising database
 #define LOGURL  "http://www.blah.com?dev=" DEVICENAME //The log API needs to be improved for multidevices FIXME
 #define MQTT_SERVER "192.168.0.1"
-#define MQTT_PORT 1833
+#define MQTT_PORT 1883
 
 #define MQTT_ACTIVATE_TOPIC "status/" DEVICENAME "/activated"
 #define MQTT_DEACTIVATE_TOPIC "status/" DEVICENAME "/deactivated"
