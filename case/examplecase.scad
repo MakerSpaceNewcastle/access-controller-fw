@@ -151,7 +151,14 @@ translate([material_thickness+44.5,5+material_thickness+40-3,0]) circle(r=1.7);
 
 translate([outer_x + material_thickness, material_thickness,0]) difference() {
 
-short_side_face() ;
+    difference() {
+        short_side_face();
+        //Cable entry slot
+        hull() {
+            translate([(outer_x - material_thickness*2)/2,0,0]) circle(r=1.5, $fn=20);
+            translate([(outer_x - material_thickness*2)/2,(outer_z - material_thickness*2)/2,0]) circle(r=1.5, $fn=20);
+        }
+    }   
 }
 
 
