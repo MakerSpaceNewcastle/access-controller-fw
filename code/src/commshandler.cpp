@@ -48,7 +48,7 @@ void CommsHandler::setLEDColor(uint8_t r, uint8_t g, uint8_t b) {
 bool CommsHandler::logAccess(const char *hash, const char *event) {
   HTTPClient client;
   String fullURL(LOGURL);
-  client.begin(fullURL + "?card=" + hash + "&event=" + event);
+  client.begin(fullURL + "&card=" + hash + "&event=" + event);
   int result = client.GET();
   client.end();
   if (result == 200) return true;
