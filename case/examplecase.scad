@@ -139,12 +139,10 @@ translate([material_thickness,outer_y*2 + 5 + material_thickness*2 + 3,0]) long_
 translate([material_thickness + outer_y,outer_y*2 + 5 + material_thickness*2 + 3,0]) difference() {
 
  long_side_face();
-translate([material_thickness+7.5,5+material_thickness+7.5,0]) circle(r=1.7);
-translate([material_thickness+7.5,5+material_thickness+40-7.5,0]) circle(r=1.7);
-
-
-translate([material_thickness+44.5,5+material_thickness+3,0]) circle(r=1.7);
-translate([material_thickness+44.5,5+material_thickness+40-3,0]) circle(r=1.7);
+translate([material_thickness+7.5,5+material_thickness+7.5,0]) circle(r=1.7, $fn=20);
+translate([material_thickness+7.5,5+material_thickness+40-7.5,0]) circle(r=1.7, $fn=20);
+translate([material_thickness+44.5,5+material_thickness+3,0]) circle(r=1.7, $fn=20);
+translate([material_thickness+44.5,5+material_thickness+40-3,0]) circle(r=1.7, $fn=20);
 }
 
 
