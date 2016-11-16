@@ -104,8 +104,10 @@ void CommsHandler::deviceActivated(const char *hash) {
 }
 
 void CommsHandler::deviceDeactivated(const char *hash) {
+#if LATCH_MODE == 1 //If it's a momentary device (ie non-latching), don't log/send
   logAccess(hash, "Deactivated");
   sendMQTT(MQTT_DEACTIVATE_TOPIC, hash);
+#endif
   ledReadyState();
 }
 
