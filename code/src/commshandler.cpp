@@ -22,8 +22,8 @@ CommsHandler::~CommsHandler() {
 }
 
 void CommsHandler::ledReadyState() {
-  if (WiFi.status() == WL_CONNECTED ) setLEDColor(0, 0, 255);
-  else setLEDColor(255,0,255);
+  if (WiFi.status() == WL_CONNECTED ) setLEDColor( LED_READY_COLOUR );
+  else setLEDColor (LED_READY_COLOUR_NO_WIFI);
 }
 
 bool CommsHandler::connectToWifi(const char *ssid, const char *pw) {
@@ -94,11 +94,11 @@ void CommsHandler::OTAUpdate() {
 
 void CommsHandler::ledWaitState() {
   //yellow
-  setLEDColor(255,255,0);
+  setLEDColor(LED_WAIT_COLOUR);
 }
 
 void CommsHandler::deviceActivated(const char *hash) {
-  setLEDColor(0,255,0); //green
+  setLEDColor(LED_GRANTED_COLOUR); //green
   logAccess(hash, "Activated");
   sendMQTT(MQTT_ACTIVATE_TOPIC, hash);
 }
@@ -112,7 +112,7 @@ void CommsHandler::deviceDeactivated(const char *hash) {
 }
 
 void CommsHandler::loginFail(const char *hash) {
-  setLEDColor(255,0,0); //go red.
+  setLEDColor(LED_DENIED_COLOUR); //go red.
   logAccess(hash, "LoginFail");
   sendMQTT(MQTT_LOGINFAIL_TOPIC, hash);
   delay(2000);

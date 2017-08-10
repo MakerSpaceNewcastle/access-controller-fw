@@ -31,6 +31,13 @@
 #define OTA_URL "/RFID/" DEVICENAME ".bin"
 #define OTA_TRIGGER_CARDHASH ""
 
+
+//LED colour scheme
+#define LED_READY_COLOUR 0, 0, 255
+#define LED_READY_COLOUR_NO_WIFI 255,0,255
+#define LED_WAIT_COLOUR 255,255,0
+#define LED_GRANTED_COLOUR 0, 255, 0
+#define LED_DENIED_COLOUR 255, 0, 0
 //Board structure/pinouts
 //Pin defintions for MFRC522/SPI wiring
 #define RST_PIN	15 //ACTUALLY it's wired to 16, but seems to prefer being somewhere else!
