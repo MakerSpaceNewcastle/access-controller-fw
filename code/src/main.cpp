@@ -84,9 +84,17 @@ bool checkCard(String hash) {
 }
 
 void loop() {
+
+  unsigned long freeHeap = ESP.getFreeHeap();
+  Serial.print("Free heap: ");
+  Serial.println(freeHeap);
+  if (freeHeap < 5000) {
+    Serial.println("Free heap < 5k - rebooting");
+    ESP.reset();
+  }
+
   Serial.println("Ready, listening for card - ");
-  Serial.print("free heap: ");
-  Serial.println(ESP.getFreeHeap());
+
   //Keep trying to sense if a card is present.
   while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
     delay(50);
