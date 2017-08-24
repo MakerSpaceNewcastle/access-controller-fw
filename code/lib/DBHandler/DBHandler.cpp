@@ -37,30 +37,40 @@ DBHandler::DBHandler(const char *filename, const char *url) {
   }
 }
 
-DBHandler::~DBHandler() {
-
-}
+DBHandler::~DBHandler() {}
 
 bool DBHandler::sync() {
-  Serial.println("Checking server database version");
+  Serial.print("Connecting to server: ");
+  Serial.println(syncURL);
   HTTPClient client;
   client.begin(syncURL);
   //The Etag needs to be placed in quotes.
   client.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));
-  const char *headerKeys[] = {"ETag",};
-  client.collectHeaders(headerKeys, 1);
+  //Use 2 headers from the server  - etag for versioning, and content-length to make sure whole DB is received.
+  const char *headerKeys[] = {"ETag", "Content-Length", };
+  client.collectHeaders(headerKeys, 2);
 
   int result = client.GET();
 
-  String id = client.header("ETag");
-
-  if (id.length() == 34) id = id.substring(1,33); //If it's quoted, strip the quotes...
-  const char *newDBID = id.c_str();
-  
   if (result != 304 && result != 200) {
-    Serial.println("Bogus server response (not 200/304)");
+    Serial.println("Bogus HTTP server response  - ");
+    Serial.println(result);
     return false;
   }
+
+  //ETag mandatory, as used for database versioning
+  if (!client.hasHeader("ETag")) {
+    Serial.println("Error - ETag header missing. Update failed");
+    return false;
+  }
+  String id = client.header("ETag");
+  if (id.length() == 34) id = id.substring(1,33); //If it's quoted, strip the quotes...
+  if (id.length() != 32) {
+    Serial.print("Invalid DB ETag received from remote server - ");
+    Serial.println(id);
+    return false;
+  }
+  const char *newDBID = id.c_str();
 
   if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
     Serial.print("Server result - ");
@@ -69,13 +79,10 @@ bool DBHandler::sync() {
     return true;
   }
 
-  if (strlen(newDBID) != 32) {
-    Serial.print("Invalid DB ETag received from remote server - ");
-    Serial.println(newDBID);
-    return false;
-  }
-
-  Serial.print("Server version of database is ");
+  //Database update starts here.
+  unsigned long bytesExpected = client.header("Content-Length").toInt();
+  unsigned long bytesReceived = 0;
+  Serial.print("Remote version of database is ");
   Serial.println(newDBID);
   EDB_FS tempDB;
   tempDB.create("/tmpDB", TABLE_SIZE, sizeof(DBRecord));
@@ -84,26 +91,49 @@ bool DBHandler::sync() {
   WiFiClient *ptr = client.getStreamPtr();
 
   String buf;
+  int errorsDetected = 0;
 
   while (ptr->available()) {
     buf = ptr->readStringUntil(REMOTE_DELIM_CHAR);
     const char *p = buf.c_str();
-
-    if (strlen(p) == sizeof(DBRecord)-1) {
+    unsigned int len = buf.length();
+    bytesReceived += len + 1; //the +1 is because the delim char is otherwise not counted.
+    if (len == sizeof(DBRecord)-1) {
       tempDB.appendRec((unsigned char*)p);
     }
     else {
-      Serial.print("Rejected row ");
+      Serial.print("Error: Garbled data, rejected row ");
       Serial.println(p);
+      errorsDetected = 1;
     }
   }
 
-  //Do the delete/rename
-  Serial.println("Substituting databases..");
+  if (bytesReceived != bytesExpected) {
+    Serial.print("Error: Incomplete update - bytes expected: ");
+    Serial.print(bytesExpected);
+    Serial.print(", got ");
+    Serial.println(bytesReceived);
+    errorsDetected = 1;
+  }
+
+  //Do the delete/rename if no errors.
   tempDB.close();
   database.close();
-  SPIFFS.remove(filePath);
-  SPIFFS.rename("/tmpDB", filePath);
+  if (!errorsDetected) {
+    //No garbled rows, received all the data.
+    Serial.print("Received database of ");
+    Serial.print(bytesReceived);
+    Serial.println(" bytes");
+    Serial.println("Substituting new database");
+    //Delete the 'real DB', move the temp DB into its' place.
+    SPIFFS.remove(filePath);
+    SPIFFS.rename("/tmpDB", filePath);
+  }
+  else {
+    Serial.println("Rejecting DB update due to errors");
+    //delete temporary database
+    SPIFFS.remove("/tmpDB");
+  }
 
   database.open(filePath);
 
