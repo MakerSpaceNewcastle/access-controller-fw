@@ -64,7 +64,10 @@ bool DBHandler::sync() {
     return false;
   }
   String id = client.header("ETag");
-  if (id.length() == 34) id = id.substring(1,33); //If it's quoted, strip the quotes...
+  //Handle both weak etags and quoted etags, and quoted weak etags...
+  if (id.startsWith("W/")) id.remove(0,2); //If it's a weak etag, trim the leading W/
+  if (id.length() == 34 && id.startsWith("\"")) id = id.substring(1,33); //If it's quoted, strip the quotes...
+  //Now check if the id is the right length
   if (id.length() != 32) {
     Serial.print("Invalid DB ETag received from remote server - ");
     Serial.println(id);
