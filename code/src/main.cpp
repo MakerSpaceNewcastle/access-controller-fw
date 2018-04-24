@@ -13,8 +13,6 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Arduino.h>
-
-#include <MD5_String.h>  //  https://github.com/alistairuk/MD5_String
 #include <../lib/DBHandler/DBHandler.h> //Included as part of project tree.
 #include <commshandler.h>
 
@@ -65,9 +63,9 @@ void setup() {
   comms.ledReadyState();
 }
 
-bool checkCard(String hash) {
+bool checkCard(char *hash) {
   //if it's in the local cache, then it's valid.
-  if (database.contains(hash.c_str())) return true;
+  if (database.contains(hash)) return true;
 
   if (WiFi.status() == WL_CONNECTED) {
     //Check our database is up to date, and if it isn't,
@@ -77,7 +75,7 @@ bool checkCard(String hash) {
     Serial.println("Unrecognised card, attempting database sync.");
     database.sync();
     //If it's in the cache now, it's valid.
-    if (database.contains(hash.c_str())) return true;
+    if (database.contains(hash)) return true;
   }
   //Wasn't in the local cache, nor the updated one.
   return false;
@@ -100,19 +98,25 @@ void loop() {
     delay(50);
   }
   //Found a card - generate the MD5 hash of the card UID.
-  String cardHash = md5_string((char*)mfrc522.uid.uidByte, mfrc522.uid.size);
+  MD5Builder hashBuilder;
+  hashBuilder.begin();
+  hashBuilder.add(mfrc522.uid.uidByte, mfrc522.uid.size);
+  hashBuilder.calculate();
+  char hash[17];
+  hashBuilder.getChars(&hash[0]);
+
   Serial.println("Read card.  Card UID Hash (MD5): ");
-  Serial.println(cardHash);
+  Serial.println(hash);
 #ifdef OTA_UPDATE_SUPPORT
   //See if this card is the OTA update trigger card, and if so, do the update.
-  if (!strcmp(cardHash.c_str(), OTA_TRIGGER_CARDHASH)) comms.OTAUpdate();
+  if (!strcmp(hash, OTA_TRIGGER_CARDHASH)) comms.OTAUpdate();
 #endif
 
-  bool validUser = checkCard(cardHash);
+  bool validUser = checkCard(hash);
   if (validUser) {
     Serial.println("Card allowed - activating device");
     activateDevice();
-    comms.deviceActivated(cardHash.c_str());
+    comms.deviceActivated(hash);
 #if LATCH_MODE == 0  //Non-latching, ie for door controller
 
       Serial.print(" - Waiting for ");
@@ -120,7 +124,7 @@ void loop() {
       Serial.println(" seconds");
       delay(ACTIVATE_TIME);
       deactivateDevice();
-      comms.deviceDeactivated(cardHash.c_str());
+      comms.deviceDeactivated(hash);
 
 #elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
 
@@ -132,7 +136,7 @@ void loop() {
         delay(50);
       }
       deactivateDevice();
-      comms.deviceDeactivated(cardHash.c_str());
+      comms.deviceDeactivated(hash);
 
       delay(2000); //otherwise we will reactivate again as the card is still readable!
   #endif
@@ -140,6 +144,6 @@ void loop() {
   else {
     //This card is NOT allowed access.
     Serial.println("Card not allowed - NOT activating device");
-    comms.loginFail(cardHash.c_str());
+    comms.loginFail(hash);
   }
 }
