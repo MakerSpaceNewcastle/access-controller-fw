@@ -48,7 +48,7 @@ void CommsHandler::setLEDColor(uint8_t r, uint8_t g, uint8_t b) {
 bool CommsHandler::logAccess(const char *hash, const char *event) {
   if (WiFi.status() != WL_CONNECTED) {
 	  return false;
-  } 
+  }
   HTTPClient client;
   String fullURL(LOGURL);
   client.begin(fullURL + "&card=" + hash + "&event=" + event);
@@ -62,9 +62,8 @@ bool CommsHandler::sendMQTT(const char *topic, const char *message) {
 #ifdef MQTT_SUPPORT
   if (WiFi.status() != WL_CONNECTED) {
 	  return false;
-  }	
-  
-  HTTPClient client;
+  }
+
   //Send MQTT status update.
   if (!client->connected()) {
 	client->connect(DEVICENAME);
