@@ -8,6 +8,9 @@
 #include <ESP8266HTTPClient.h>
 
 #ifdef MQTT_SUPPORT
+//These set the timeouts for MQTT but need to be redefined above the PubSubClient include.
+#define MQTT_KEEPALIVE 5
+#define MQTT_SOCKET_TIMEOUT 5
 #include <PubSubClient.h> //for MQTT announcements...
 #endif
 

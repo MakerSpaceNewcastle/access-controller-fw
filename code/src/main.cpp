@@ -95,6 +95,9 @@ void loop() {
 
   //Keep trying to sense if a card is present.
   while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
+    //This is in the polling loop so that the led colour can be flipped if the wifi status changes 
+    //ie we connect or disconnect.
+    comms.ledWaitState();
     delay(50);
   }
   //Found a card - generate the MD5 hash of the card UID.
