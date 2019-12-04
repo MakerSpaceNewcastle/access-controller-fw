@@ -40,9 +40,17 @@ DBHandler::DBHandler(const char *filename, const char *url) {
 DBHandler::~DBHandler() {}
 
 bool DBHandler::sync() {
+  Serial.print("DB Sync: ");
+  
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Abandoned (Wifi not connected)");
+	  return false;
+  }
+  
   Serial.print("Connecting to server: ");
   Serial.println(syncURL);
   HTTPClient client;
+  client.setTimeout(10);
   client.begin(syncURL);
   //The Etag needs to be placed in quotes.
   client.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));

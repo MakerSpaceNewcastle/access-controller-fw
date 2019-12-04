@@ -5,6 +5,7 @@
 #include <FS.h>
 #include <EDB_FS.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
 
 typedef struct DBRecord {
   char hash[33];  //hash is 32 chars + terminating \0
