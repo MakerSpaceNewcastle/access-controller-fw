@@ -46,11 +46,11 @@ bool DBHandler::sync() {
     Serial.println("Abandoned (Wifi not connected)");
 	  return false;
   }
-  
+
   Serial.print("Connecting to server: ");
   Serial.println(syncURL);
   HTTPClient client;
-  client.setTimeout(10);
+  client.setTimeout(2000);
   client.begin(syncURL);
   //The Etag needs to be placed in quotes.
   client.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));

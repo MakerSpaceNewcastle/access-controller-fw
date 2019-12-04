@@ -35,8 +35,8 @@ bool CommsHandler::connectToWifi(const char *ssid, const char *pw) {
 
     Serial.print("Connecting to wifi ");
     WiFi.begin(ssid, pw);
-    //Try for 5 seconds to get on to wifi.  If not, we'll have to run unconnected.
-    for (int i=0; i<10; ++i) {
+    //Try for 10 seconds to get on to wifi.  If not, we'll have to run unconnected.
+    for (int i=0; i<20; ++i) {
       delay(500);
       Serial.print(".");
       if (WiFi.status() == WL_CONNECTED) return true;
@@ -54,7 +54,7 @@ bool CommsHandler::logAccess(const char *hash, const char *event) {
 	  return false;
   }
   HTTPClient cl;
-   cl.setTimeout(5);
+   cl.setTimeout(2000);
   String fullURL(LOGURL);
   cl.begin(fullURL + "&card=" + hash + "&event=" + event);
   int result = cl.GET();
