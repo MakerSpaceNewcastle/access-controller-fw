@@ -35,6 +35,8 @@ bool CommsHandler::connectToWifi(const char *ssid, const char *pw) {
 
     Serial.print("Connecting to wifi ");
     WiFi.begin(ssid, pw);
+    WiFi.mode(WIFI_STA); //Hopefully stop unwanted SSID broadcasts!
+    
     //Try for 10 seconds to get on to wifi.  If not, we'll have to run unconnected.
     for (int i=0; i<20; ++i) {
       delay(500);
