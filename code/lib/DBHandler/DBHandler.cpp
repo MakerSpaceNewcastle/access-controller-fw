@@ -51,7 +51,8 @@ bool DBHandler::sync() {
   Serial.println(syncURL);
   HTTPClient client;
   client.setTimeout(2000);
-  client.begin(syncURL);
+  WiFiClient *wifiClient = new WiFiClient();
+  client.begin(*wifiClient, syncURL);
   //The Etag needs to be placed in quotes.
   client.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));
   //Use 2 headers from the server  - etag for versioning, and content-length to make sure whole DB is received.
@@ -60,6 +61,8 @@ bool DBHandler::sync() {
 
   int result = client.GET();
 
+  delete wifiClient;
+  
   if (result != 304 && result != 200) {
     Serial.println("Bogus HTTP server response  - ");
     Serial.println(result);
