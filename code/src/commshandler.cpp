@@ -58,7 +58,7 @@ bool CommsHandler::logAccess(const char *hash, const char *event) {
   HTTPClient cl;
    cl.setTimeout(2000);
   String fullURL(LOGURL);
-  cl.begin(fullURL + "&card=" + hash + "&event=" + event);
+  cl.begin(*espClient, fullURL + "&card=" + hash + "&event=" + event);
   int result = cl.GET();
   cl.end();
   if (result == 200) return true;
@@ -80,6 +80,7 @@ bool CommsHandler::sendMQTT(const char *topic, const char *message) {
       // Once connected, publish an announcement...
       client->publish(topic, message);
   }
+  return true;
 #endif
 }
 
@@ -94,7 +95,7 @@ void CommsHandler::OTAUpdate() {
   }
 
   ESPhttpUpdate.rebootOnUpdate(false);
-  int result = ESPhttpUpdate.update(OTA_SERVER, OTA_PORT, OTA_URL);
+  int result = ESPhttpUpdate.update(*espClient, OTA_SERVER, OTA_PORT, OTA_URL);
   for (int i=0; i<4; ++i) {
     //Four green flashes if success, four red flashes if failed.
     if (result == HTTP_UPDATE_OK) setLEDColor(0,255,0);
