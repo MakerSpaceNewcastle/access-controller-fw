@@ -3,21 +3,21 @@
 DBHandler::DBHandler(const char *filename, const char *url) {
   filePath = filename;
   syncURL = url;
-  if ( ! SPIFFS.begin()) {
-    Serial.println("Unable to init SPIFFS - trying format");
+  if ( ! LittleFS.begin()) {
+    Serial.println(F("Unable to init LittleFS - trying format"));
     //Oh dear.  Try formatting it, might be a fresh board.
-    if ( SPIFFS.format()) {
-      Serial.println("Format successful");
+    if ( LittleFS.format()) {
+      Serial.println(F("Format successful"));
     }
     else {
-      Serial.println("Format also failed - aborting.");
+      Serial.println(F("Format also failed - aborting."));
       return;
     }
   }
 
   int result = database.open(filePath);
   if (result == EDB_ERROR) {
-    Serial.print("Unable to open database, attempting to create new one - ");
+    Serial.print(F("Unable to open database, attempting to create new one - "));
     //Might be a new device without a database, try creating instead.
     result = database.create(filePath, TABLE_SIZE, sizeof(DBRecord) );
     if (result  == EDB_OK) {
@@ -29,86 +29,85 @@ DBHandler::DBHandler(const char *filename, const char *url) {
     }
   }
   else {
-    Serial.println("Database opened, version ");
+    Serial.println(F("Database opened, version "));
     Serial.print(database.DBVersion());
-    Serial.print(", containing ");
+    Serial.print(F(", containing "));
     Serial.print(database.count());
-    Serial.println(" records");
+    Serial.println(F(" records"));
   }
 }
 
 DBHandler::~DBHandler() {}
 
+//These must be declared here - if you put them in a function, the stack overflows.
+WiFiClient wifiClient;
+HTTPClient httpClient;
+
 bool DBHandler::sync() {
-  Serial.print("DB Sync: ");
+
+  Serial.print(F("DB Sync: "));
   
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Abandoned (Wifi not connected)");
+    Serial.println(F("Abandoned (Wifi not connected)"));
 	  return false;
   }
 
-  Serial.print("Connecting to server: ");
+  Serial.print(F("Connecting to server: "));
   Serial.println(syncURL);
-  HTTPClient client;
-  client.setTimeout(2000);
-  WiFiClient *wifiClient = new WiFiClient();
-  client.begin(*wifiClient, syncURL);
+  httpClient.begin(wifiClient, syncURL);
   //The Etag needs to be placed in quotes.
-  client.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));
+  httpClient.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));
   //Use 2 headers from the server  - etag for versioning, and content-length to make sure whole DB is received.
   const char *headerKeys[] = {"ETag", "Content-Length", };
-  client.collectHeaders(headerKeys, 2);
+  httpClient.collectHeaders(headerKeys, 2);
 
-  int result = client.GET();
+  int result = httpClient.GET();
 
-  delete wifiClient;
-  
   if (result != 304 && result != 200) {
-    Serial.println("Bogus HTTP server response  - ");
+    Serial.println(F("Bogus HTTP server response  - "));
     Serial.println(result);
     return false;
   }
 
   //ETag mandatory, as used for database versioning
-  if (!client.hasHeader("ETag")) {
-    Serial.println("Error - ETag header missing. Update failed");
+  if (!httpClient.hasHeader("ETag")) {
+    Serial.println(F("Error - ETag header missing. Update failed"));
     return false;
   }
-  String id = client.header("ETag");
+  String id = httpClient.header("ETag");
   //Handle both weak etags and quoted etags, and quoted weak etags...
   if (id.startsWith("W/")) id.remove(0,2); //If it's a weak etag, trim the leading W/
   if (id.length() == 34 && id.startsWith("\"")) id = id.substring(1,33); //If it's quoted, strip the quotes...
   //Now check if the id is the right length
   if (id.length() != 32) {
-    Serial.print("Invalid DB ETag received from remote server - ");
+    Serial.print(F("Invalid DB ETag received from remote server - "));
     Serial.println(id);
     return false;
   }
   const char *newDBID = id.c_str();
 
   if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
-    Serial.print("Server result - ");
+    Serial.print(F("Server result - "));
     Serial.print(result);
-    Serial.println(" - DB is in sync");
+    Serial.println(F(" - DB is in sync"));
     return true;
   }
 
   //Database update starts here.
-  unsigned long bytesExpected = client.header("Content-Length").toInt();
+  unsigned long bytesExpected = httpClient.header("Content-Length").toInt();
   unsigned long bytesReceived = 0;
-  Serial.print("Remote version of database is ");
+  Serial.print(F("Remote version of database is "));
   Serial.println(newDBID);
   EDB_FS tempDB;
   tempDB.create("/tmpDB", TABLE_SIZE, sizeof(DBRecord));
   tempDB.setDBVersion(newDBID);
 
-  WiFiClient *ptr = client.getStreamPtr();
+  WiFiClient *ptr = &wifiClient;
 
-  String buf;
   int errorsDetected = 0;
 
   while (ptr->available()) {
-    buf = ptr->readStringUntil(REMOTE_DELIM_CHAR);
+    String buf = ptr->readStringUntil(REMOTE_DELIM_CHAR);
     const char *p = buf.c_str();
     unsigned int len = buf.length();
     bytesReceived += len + 1; //the +1 is because the delim char is otherwise not counted.
@@ -116,37 +115,38 @@ bool DBHandler::sync() {
       tempDB.appendRec((unsigned char*)p);
     }
     else {
-      Serial.print("Error: Garbled data, rejected row ");
+      Serial.print(F("Error: Garbled data, rejected row "));
       Serial.println(p);
       errorsDetected = 1;
     }
   }
 
   if (bytesReceived != bytesExpected) {
-    Serial.print("Error: Incomplete update - bytes expected: ");
+    Serial.print(F("Error: Incomplete update - bytes expected: "));
     Serial.print(bytesExpected);
     Serial.print(", got ");
     Serial.println(bytesReceived);
     errorsDetected = 1;
   }
 
+
   //Do the delete/rename if no errors.
   tempDB.close();
   database.close();
   if (!errorsDetected) {
     //No garbled rows, received all the data.
-    Serial.print("Received database of ");
+    Serial.print(F("Received database of "));
     Serial.print(bytesReceived);
-    Serial.println(" bytes");
-    Serial.println("Substituting new database");
+    Serial.println(F(" bytes"));
+    Serial.println(F("Substituting new database"));
     //Delete the 'real DB', move the temp DB into its' place.
-    SPIFFS.remove(filePath);
-    SPIFFS.rename("/tmpDB", filePath);
+    LittleFS.remove(filePath);
+    LittleFS.rename("/tmpDB", filePath);
   }
   else {
-    Serial.println("Rejecting DB update due to errors");
+    Serial.println(F("Rejecting DB update due to errors"));
     //delete temporary database
-    SPIFFS.remove("/tmpDB");
+    LittleFS.remove("/tmpDB");
   }
 
   database.open(filePath);

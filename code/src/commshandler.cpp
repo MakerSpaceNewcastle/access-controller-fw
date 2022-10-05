@@ -6,6 +6,7 @@ CommsHandler::CommsHandler() {
   led->setBrightness(100);
 
   #ifdef MQTT_SUPPORT
+
   espClient = new WiFiClient();
   client = new PubSubClient(*espClient);
   //Initialise MQTT server
@@ -33,7 +34,7 @@ void CommsHandler::ledReadyState() {
 bool CommsHandler::connectToWifi(const char *ssid, const char *pw) {
     if (WiFi.status() == WL_CONNECTED) return true;
 
-    Serial.print("Connecting to wifi ");
+    Serial.print(F("Connecting to wifi "));
     WiFi.begin(ssid, pw);
     WiFi.mode(WIFI_STA); //Hopefully stop unwanted SSID broadcasts!
     
@@ -55,13 +56,14 @@ bool CommsHandler::logAccess(const char *hash, const char *event) {
   if (WiFi.status() != WL_CONNECTED) {
 	  return false;
   }
+  /*
   HTTPClient cl;
    cl.setTimeout(2000);
   String fullURL(LOGURL);
   cl.begin(*espClient, fullURL + "&card=" + hash + "&event=" + event);
   int result = cl.GET();
   cl.end();
-  if (result == 200) return true;
+  if (result == 200) return true;*/
   return false;
 }
 
@@ -80,8 +82,8 @@ bool CommsHandler::sendMQTT(const char *topic, const char *message) {
       // Once connected, publish an announcement...
       client->publish(topic, message);
   }
-  return true;
 #endif
+  return true;
 }
 
 
@@ -95,7 +97,8 @@ void CommsHandler::OTAUpdate() {
   }
 
   ESPhttpUpdate.rebootOnUpdate(false);
-  int result = ESPhttpUpdate.update(*espClient, OTA_SERVER, OTA_PORT, OTA_URL);
+  WiFiClient espClient; 
+  int result = ESPhttpUpdate.update(espClient, OTA_SERVER, OTA_PORT, OTA_URL);
   for (int i=0; i<4; ++i) {
     //Four green flashes if success, four red flashes if failed.
     if (result == HTTP_UPDATE_OK) setLEDColor(0,255,0);

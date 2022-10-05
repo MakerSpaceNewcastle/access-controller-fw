@@ -27,19 +27,19 @@ DBHandler database( SPIFFS_FILEPATH, SYNCURL);
 
 //Activate device
 void activateDevice() {
-  Serial.print("Activating device");
+  Serial.print(F("Activating device"));
   //Trigger the relay via FET
   digitalWrite(RELAY_PIN, HIGH);
 }
 
 void deactivateDevice() {
-    Serial.println("Deactivating device");
+    Serial.println(F("Deactivating device"));
     digitalWrite(RELAY_PIN, LOW);
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting...");
+  Serial.println(F("Starting..."));
 
   comms.ledWaitState();
   comms.connectToWifi(WIFI_SSID, WIFI_PW);
@@ -53,12 +53,12 @@ void setup() {
 
   //Initialise and if necessary sync the user database.
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("Syncing database");
+    Serial.println(F("Syncing database"));
     if (database.sync()) Serial.println(" - done");
     else Serial.println(" - failed");
   }
   else {
-    Serial.println("Running in offline mode, using local database");
+    Serial.println(F("Running in offline mode, using local database"));
   }
   comms.ledReadyState();
 }
@@ -72,7 +72,7 @@ bool checkCard(char *hash) {
     //sync it, then check again.
     //LED to yellow while we do this.
     comms.ledWaitState();
-    Serial.println("Unrecognised card, attempting database sync.");
+    Serial.println(F("Unrecognised card, attempting database sync."));
     database.sync();
     //If it's in the cache now, it's valid.
     if (database.contains(hash)) return true;
@@ -84,14 +84,14 @@ bool checkCard(char *hash) {
 void loop() {
 
   unsigned long freeHeap = ESP.getFreeHeap();
-  Serial.print("Free heap: ");
+  Serial.print(F("Free heap: "));
   Serial.println(freeHeap);
   if (freeHeap < 5000) {
-    Serial.println("Free heap < 5k - rebooting");
+    Serial.println(F("Free heap < 5k - rebooting"));
     ESP.reset();
   }
 
-  Serial.println("Ready, listening for card - ");
+  Serial.println(F("Ready, listening for card - "));
 
   //Keep trying to sense if a card is present.
   while (! mfrc522.PICC_IsNewCardPresent() ) {
@@ -100,7 +100,6 @@ void loop() {
     comms.ledReadyState();
     delay(50);
   }
-  
 
   //Read the card - if it's unreadable, return, and loop will run again.
   if (!mfrc522.PICC_ReadCardSerial()) 
@@ -114,7 +113,7 @@ void loop() {
   char hash[17];
   hashBuilder.getChars(&hash[0]);
 
-  Serial.println("Read card.  Card UID Hash (MD5): ");
+  Serial.println(F("Read card.  Card UID Hash (MD5): "));
   Serial.println(hash);
 #ifdef OTA_UPDATE_SUPPORT
   //See if this card is the OTA update trigger card, and if so, do the update.
@@ -123,7 +122,7 @@ void loop() {
 
   bool validUser = checkCard(hash);
   if (validUser) {
-    Serial.println("Card allowed - activating device");
+    Serial.println(F("Card allowed - activating device"));
     activateDevice();
     comms.deviceActivated(hash);
 #if LATCH_MODE == 0  //Non-latching, ie for door controller
@@ -137,7 +136,7 @@ void loop() {
 
 #elif LATCH_MODE == 1 //Latching, remains triggered ie for milling machine controller etc
 
-      Serial.print(" - Will remain active until card presented");
+      Serial.print(F(" - Will remain active until card presented"));
       //Wait for 2 seconds for the user to remove their card, otherwise we just keep activating/deactivating
       delay(2000);
       //Wait for a card to be presented to end session
@@ -152,7 +151,7 @@ void loop() {
   }
   else {
     //This card is NOT allowed access.
-    Serial.println("Card not allowed - NOT activating device");
+    Serial.println(F("Card not allowed - NOT activating device"));
     comms.loginFail(hash);
   }
 }

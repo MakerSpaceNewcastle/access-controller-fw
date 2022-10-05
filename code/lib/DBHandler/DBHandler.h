@@ -2,7 +2,7 @@
 #define DBHANDLER
 
 #include <Arduino.h>
-#include <FS.h>
+#include <LittleFS.h>
 #include <EDB_FS.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>

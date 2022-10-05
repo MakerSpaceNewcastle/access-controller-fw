@@ -43,8 +43,8 @@ private:
   bool sendMQTT(const char *topic, const char *message);
 
    Adafruit_NeoPixel *led;
-#ifdef MQTT_SUPPORT
   WiFiClient  *espClient;
+#ifdef MQTT_SUPPORT
   PubSubClient *client;
 #endif
 
