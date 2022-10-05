@@ -94,13 +94,19 @@ void loop() {
   Serial.println("Ready, listening for card - ");
 
   //Keep trying to sense if a card is present.
-  while (! mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) {
+  while (! mfrc522.PICC_IsNewCardPresent() ) {
     //This is in the polling loop so that the led colour can be flipped if the wifi status changes 
     //ie we connect or disconnect.
     comms.ledReadyState();
     delay(50);
   }
-  //Found a card - generate the MD5 hash of the card UID.
+  
+
+  //Read the card - if it's unreadable, return, and loop will run again.
+  if (!mfrc522.PICC_ReadCardSerial()) 
+    return;
+
+  //Generate the MD5 hash of the card UID.
   MD5Builder hashBuilder;
   hashBuilder.begin();
   hashBuilder.add(mfrc522.uid.uidByte, mfrc522.uid.size);
