@@ -7,6 +7,13 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 
+#ifdef DEBUG
+  #define DEBUG_PRINT(x)  Serial.println (x)
+#else
+  #define DEBUG_PRINT(x)
+#endif
+
+
 typedef struct DBRecord {
   char hash[33];  //hash is 32 chars + terminating \0
 };
