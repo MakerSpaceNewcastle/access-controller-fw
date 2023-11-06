@@ -7,13 +7,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-#ifdef MQTT_SUPPORT
-//These set the timeouts for MQTT but need to be redefined above the PubSubClient include.
-#define MQTT_KEEPALIVE 5
-#define MQTT_SOCKET_TIMEOUT 5
-#include <PubSubClient.h> //for MQTT announcements...
-#endif
-
 #ifdef OTA_UPDATE_SUPPORT
 #include <ESP8266httpUpdate.h>
 #endif
@@ -40,13 +33,10 @@ private:
 
   void setLEDColor(uint8_t, uint8_t, uint8_t);
   bool logAccess(const char *hash, const char *event);
-  bool sendMQTT(const char *topic, const char *message);
 
    Adafruit_NeoPixel *led;
   WiFiClient  *espClient;
-#ifdef MQTT_SUPPORT
-  PubSubClient *client;
-#endif
+
 
 };
 

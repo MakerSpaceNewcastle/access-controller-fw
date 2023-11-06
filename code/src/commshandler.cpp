@@ -4,22 +4,10 @@ CommsHandler::CommsHandler() {
   led = new Adafruit_NeoPixel(1, LED_PIN, NEO_GRB + NEO_KHZ800); //status LED
   led->begin();
   led->setBrightness(100);
-
-  #ifdef MQTT_SUPPORT
-
-  espClient = new WiFiClient();
-  client = new PubSubClient(*espClient);
-  //Initialise MQTT server
-  client->setServer(MQTT_SERVER, MQTT_PORT);
-  #endif
 }
 
 CommsHandler::~CommsHandler() {
   delete led;
-#ifdef MQTT_SUPPORT
-  delete client;
-  delete espClient;
-#endif
 }
 
 void CommsHandler::ledReadyState() {
@@ -56,36 +44,25 @@ bool CommsHandler::logAccess(const char *hash, const char *event) {
   if (WiFi.status() != WL_CONNECTED) {
 	  return false;
   }
-  /*
-  HTTPClient cl;
-   cl.setTimeout(2000);
-  String fullURL(LOGURL);
-  cl.begin(*espClient, fullURL + "&card=" + hash + "&event=" + event);
-  int result = cl.GET();
-  cl.end();
-  if (result == 200) return true;*/
+  
+  WiFiClient wifiClient;
+  HTTPClient httpClient;
+  httpClient.setTimeout(2000);
+  
+  httpClient.begin(wifiClient, LOGURL);
+  
+  httpClient.addHeader("Content-Type", "application/json");
+  String json = "{ \"type\": \"" + String(event) + "\", \"message\": \"" + String(hash) + "\"}";
+
+  Serial.print(json);
+
+  int result = httpClient.POST(json);
+
+  httpClient.end();
+
+  if (result == 200) return true;
   return false;
 }
-
-bool CommsHandler::sendMQTT(const char *topic, const char *message) {
-#ifdef MQTT_SUPPORT
-  if (WiFi.status() != WL_CONNECTED) {
-	  return false;
-  }
-
-  //Send MQTT status update.
-  if (!client->connected()) {
-	client->connect(DEVICENAME);
-	delay(50);
-  }
-  if (client->connected()) {
-      // Once connected, publish an announcement...
-      client->publish(topic, message);
-  }
-#endif
-  return true;
-}
-
 
 void CommsHandler::OTAUpdate() {
   //Four yellow flashes to indicate start of update.
@@ -119,13 +96,11 @@ void CommsHandler::ledWaitState() {
 void CommsHandler::deviceActivated(const char *hash) {
   setLEDColor(LED_GRANTED_COLOUR); //green
   logAccess(hash, "Activated");
-  sendMQTT(MQTT_ACTIVATE_TOPIC, hash);
 }
 
 void CommsHandler::deviceDeactivated(const char *hash) {
 #if LATCH_MODE == 1 //If it's a momentary device (ie non-latching), don't log/send
   logAccess(hash, "Deactivated");
-  sendMQTT(MQTT_DEACTIVATE_TOPIC, hash);
 #endif
   ledReadyState();
 }
@@ -133,7 +108,6 @@ void CommsHandler::deviceDeactivated(const char *hash) {
 void CommsHandler::loginFail(const char *hash) {
   setLEDColor(LED_DENIED_COLOUR); //go red.
   logAccess(hash, "LoginFail");
-  sendMQTT(MQTT_LOGINFAIL_TOPIC, hash);
   delay(2000);
   ledReadyState();
 }

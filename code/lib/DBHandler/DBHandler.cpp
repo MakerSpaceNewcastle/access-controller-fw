@@ -1,9 +1,10 @@
 #include <DBHandler.h>
 
-
-DBHandler::DBHandler(const char *filename, const char *url) {
+DBHandler::DBHandler(const char *filename, const char *verUrl, const char *syncUrl) {
   filePath = filename;
-  syncURL = url;
+  verURL = verUrl;
+  syncURL = syncUrl;
+  
   if ( ! LittleFS.begin()) {
     DEBUG_PRINT(F("Unable to init LittleFS - trying format"));
     //Oh dear.  Try formatting it, might be a fresh board.
@@ -53,57 +54,57 @@ bool DBHandler::sync() {
 	  return false;
   }
 
-  DEBUG_PRINT(F("Connecting to server: "));
-  DEBUG_PRINT(syncURL);
-  httpClient.begin(wifiClient, syncURL);
-  //The Etag needs to be placed in quotes.
-  httpClient.addHeader("If-None-Match", String("\"") + String(database.DBVersion()) + String("\""));
-  //Use 2 headers from the server  - etag for versioning, and content-length to make sure whole DB is received.
-  const char *headerKeys[] = {"ETag", "Content-Length", };
-  httpClient.collectHeaders(headerKeys, 2);
+  //First, we get the DB version from the server.
+  DEBUG_PRINT(F("Connecting to server to get Db Version: "));
+  DEBUG_PRINT(verURL);
+
+  httpClient.begin(wifiClient, verURL);
 
   int result = httpClient.GET();
-
-  if (result != 304 && result != 200) {
+  if (result != 200) {
     DEBUG_PRINT(F("Bogus HTTP server response  - "));
     DEBUG_PRINT(result);
     return false;
   }
 
-  //ETag mandatory, as used for database versioning
-  if (!httpClient.hasHeader("ETag")) {
-    DEBUG_PRINT(F("Error - ETag header missing. Update failed"));
-    return false;
-  }
-  String id = httpClient.header("ETag");
-  //Handle both weak etags and quoted etags, and quoted weak etags...
-  if (id.startsWith("W/")) id.remove(0,2); //If it's a weak etag, trim the leading W/
-  if (id.length() == 34 && id.startsWith("\"")) id = id.substring(1,33); //If it's quoted, strip the quotes...
-  //Now check if the id is the right length
-  if (id.length() != 32) {
-    DEBUG_PRINT(F("Invalid DB ETag received from remote server - "));
-    DEBUG_PRINT(id);
-    return false;
-  }
-  const char *newDBID = id.c_str();
+  String dbVersion = httpClient.getString();
+  DEBUG_PRINT(F("Got DB version of "));
+  DEBUG_PRINT(dbVersion);
 
-  if (result == 304 || !strcmp(database.DBVersion(), newDBID)) {
+  if (!strcmp(database.DBVersion(), dbVersion.c_str())) {
     DEBUG_PRINT(F("Server result - "));
     DEBUG_PRINT(result);
     DEBUG_PRINT(F(" - DB is in sync"));
     return true;
   }
+  //End this request.
+  httpClient.end();
+
+  DEBUG_PRINT(F("DB update in progress, connecting to "));
+  DEBUG_PRINT(syncURL);
+  //Get the database itself now, we need to update.
+  httpClient.begin(wifiClient, syncURL);
+  result = httpClient.GET();
+
+  if (result != 200) {
+    DEBUG_PRINT(F("Bogus HTTP server response  - "));
+    DEBUG_PRINT(result);
+    return false;
+  }
+  DEBUG_PRINT(F("Beginning update"));
+
 
   //Database update starts here.
-  unsigned long bytesExpected = httpClient.header("Content-Length").toInt();
+  unsigned long bytesExpected = httpClient.getSize();;
+  DEBUG_PRINT(F("Expected bytes:"));
+  DEBUG_PRINT (bytesExpected);
+
   unsigned long bytesReceived = 0;
-  DEBUG_PRINT(F("Remote version of database is "));
-  DEBUG_PRINT(newDBID);
   EDB_FS tempDB;
   tempDB.create("/tmpDB", TABLE_SIZE, sizeof(DBRecord));
-  tempDB.setDBVersion(newDBID);
+  tempDB.setDBVersion(dbVersion.c_str());
 
-  WiFiClient *ptr = &wifiClient;
+  WiFiClient *ptr = httpClient.getStreamPtr();
 
   int errorsDetected = 0;
 
@@ -118,6 +119,11 @@ bool DBHandler::sync() {
     else {
       DEBUG_PRINT(F("Error: Garbled data, rejected row "));
       DEBUG_PRINT(p);
+      DEBUG_PRINT(F(" got length "));
+      DEBUG_PRINT(len);
+      DEBUG_PRINT(F(", expected: "));
+      DEBUG_PRINT(sizeof(DBRecord)-1);
+
       errorsDetected = 1;
     }
   }

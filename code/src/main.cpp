@@ -21,7 +21,7 @@
 MFRC522 mfrc522(SS_PIN, RST_PIN);	// Create the MFRC522 instance
 
 CommsHandler comms;
-DBHandler database( SPIFFS_FILEPATH, SYNCURL);
+DBHandler database( SPIFFS_FILEPATH, DB_VER_URL, DB_SYNC_URL);
 
 // ****************** FUNCTIONS ******************
 

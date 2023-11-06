@@ -7,6 +7,7 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 
+#define DEBUG
 #ifdef DEBUG
   #define DEBUG_PRINT(x)  Serial.println (x)
 #else
@@ -26,13 +27,14 @@ typedef struct DBRecord {
 class DBHandler {
 
 public:
-  DBHandler(const char *, const char *);
+  DBHandler(const char *, const char *, const char *);
   ~DBHandler();
   bool sync();
   bool contains(const char*);
 
 private:
   const char *filePath;
+  const char *verURL;
   const char *syncURL;
 
   EDB_FS database;
