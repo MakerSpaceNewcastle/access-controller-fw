@@ -46,7 +46,6 @@ WiFiClient wifiClient;
 HTTPClient httpClient;
 
 bool DBHandler::sync() {
-
   DEBUG_PRINT(F("DB Sync: "));
   
   if (WiFi.status() != WL_CONNECTED) {
@@ -70,6 +69,11 @@ bool DBHandler::sync() {
   String dbVersion = httpClient.getString();
   DEBUG_PRINT(F("Got DB version of "));
   DEBUG_PRINT(dbVersion);
+
+  if (dbVersion.length() >32) {
+    DEBUG_PRINT("Hash length too long - aborting");
+    return false;
+  }
 
   if (!strcmp(database.DBVersion(), dbVersion.c_str())) {
     DEBUG_PRINT(F("Server result - "));
@@ -167,7 +171,7 @@ bool DBHandler::sync() {
 
 bool DBHandler::contains(const char *hash) {
   DBRecord rec;
-  for (int i=0;  i<database.count(); ++i) {
+  for (unsigned int i=0;  i<database.count(); ++i) {
     EDB_Status result =  database.readRec(i, EDB_REC rec);
     if (result == EDB_OK) {
       if (!strcmp(rec.hash, hash)) {

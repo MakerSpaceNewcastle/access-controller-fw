@@ -7,7 +7,6 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 
-#define DEBUG
 #ifdef DEBUG
   #define DEBUG_PRINT(x)  Serial.println (x)
 #else

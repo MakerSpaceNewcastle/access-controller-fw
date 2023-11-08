@@ -47,17 +47,13 @@ bool CommsHandler::logAccess(const char *hash, const char *event) {
   
   WiFiClient wifiClient;
   HTTPClient httpClient;
-  httpClient.setTimeout(2000);
-  
-  httpClient.begin(wifiClient, LOGURL);
-  
-  httpClient.addHeader("Content-Type", "application/json");
-  String json = "{ \"type\": \"" + String(event) + "\", \"message\": \"" + String(hash) + "\"}";
+  httpClient.setTimeout(5000);
 
-  Serial.print(json);
+  httpClient.begin(wifiClient, LOGURL);
+  httpClient.addHeader("Content-Type", "application/json");
+  String json = "{ \"type\": \"" + String(event) + "\", \"hash\": \"" + String(hash) + "\"}";
 
   int result = httpClient.POST(json);
-
   httpClient.end();
 
   if (result == 200) return true;
