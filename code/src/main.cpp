@@ -93,12 +93,20 @@ void loop() {
 
   Serial.println(F("Ready, listening for card - "));
 
+  uint8_t reset_count = 0;
   //Keep trying to sense if a card is present.
   while (! mfrc522.PICC_IsNewCardPresent() ) {
     //This is in the polling loop so that the led colour can be flipped if the wifi status changes 
     //ie we connect or disconnect.
     comms.ledReadyState();
     delay(50);
+    
+    //This is an attempt to stop the front door reader crashing....
+    //Will reset every 10 seconds ish (255*50mS)
+    reset_count++;
+    if (reset_count == 255) {
+      mfrc522.PCD_Init();
+    }
   }
 
   //Read the card - if it's unreadable, return, and loop will run again.
